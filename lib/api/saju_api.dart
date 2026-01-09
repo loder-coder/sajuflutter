@@ -1,40 +1,48 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/saju_model.dart';
 
 class SajuApi {
   // 본인의 Railway 서버 주소 (끝에 / 빼기)
   static const String baseUrl = 'https://saju-production-4978.up.railway.app';
 
   // 1. 사주 계산 및 저장 요청
-  static Future<Map<String, dynamic>> calculateSaju({
+  static Future<SajuModel> calculateSaju({
     required String birthDate,
     required String birthTime,
-    required String timezone,
-    required double longitude,
+    String timezone = 'Asia/Seoul',
+    double longitude = 127.0,
+    double latitude = 37.5,
     String? userId, // 구글 로그인 UID (이게 있어야 DB에 저장됨)
+    String? birthPlace, // [NEW] 도시 이름 추가 (백엔드 GeoService용)
     String theme = 'general',
     bool includeAnalysis = false,
   }) async {
     final url = Uri.parse('$baseUrl/saju');
     
+    final body = {
+      'birth_date': birthDate,
+      'birth_time': birthTime,
+      'timezone': timezone,
+      'longitude': longitude,
+      'latitude': latitude, // [NEW] 위도 전송
+      'birth_place': birthPlace, // [NEW] 도시 이름 전송
+      'include_analysis': includeAnalysis,
+      'theme': theme,
+      'user_id': userId,
+    };
+
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'birth_date': birthDate,
-          'birth_time': birthTime,
-          'timezone': timezone,
-          'longitude': longitude,
-          'latitude': 0.0,
-          'include_analysis': includeAnalysis,
-          'theme': theme,
-          'user_id': userId,
-        }),
+        body: jsonEncode(body),
       );
 
       if (response.statusCode == 200) {
-        return jsonDecode(utf8.decode(response.bodyBytes));
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        // Map 데이터를 SajuModel 객체로 변환해서 반환
+        return SajuModel.fromJson(data);
       } else {
         throw Exception('Server Error: ${response.statusCode}');
       }
@@ -58,7 +66,7 @@ class SajuApi {
     }
   }
 
-  // 3. [중요] 내 과거 기록 목록 가져오기 (보관함용)
+  // 3. 내 과거 기록 목록 가져오기 (보관함용)
   static Future<List<dynamic>> getUserHistory(String userId) async {
     final url = Uri.parse('$baseUrl/history/$userId');
     try {

@@ -19,12 +19,13 @@ class _InputScreenState extends State<InputScreen> {
   final _timeController = TextEditingController();
   final _locationController = TextEditingController();
   
-  double _longitude = 127.0; // 기본값 서울
+  double _longitude = 127.0; // 기본값 (백엔드가 보정하므로 크게 중요치 않음)
+  double _latitude = 37.5;
   String _timezone = 'Asia/Seoul';
   bool _isLoading = false;
   List<dynamic> _searchResults = [];
 
-  // 생년월일 날짜 선택 (DatePicker)
+  // 생년월일 날짜 선택
   Future<void> _selectDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -50,7 +51,7 @@ class _InputScreenState extends State<InputScreen> {
     }
   }
 
-  // 태어난 시간 선택 (TimePicker)
+  // 태어난 시간 선택
   Future<void> _selectTime() async {
     final picked = await showTimePicker(
       context: context, 
@@ -66,7 +67,7 @@ class _InputScreenState extends State<InputScreen> {
     }
   }
 
-  // 지역 검색 (SajuApi 연동)
+  // 지역 검색 (UI 자동완성용)
   Future<void> _onSearchChanged(String query) async {
     if (query.length < 2) {
       setState(() => _searchResults = []);
@@ -80,20 +81,19 @@ class _InputScreenState extends State<InputScreen> {
     }
   }
 
-  // 로그아웃 처리 및 화면 전환
+  // 로그아웃 처리
   Future<void> _handleLogout() async {
     final authService = Provider.of<AuthService>(context, listen: false);
     await authService.signOut();
     if (!mounted) return;
     
-    // 모든 화면 스택을 비우고 인트로 화면으로 이동
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const IntroScreen()),
       (route) => false,
     );
   }
 
-  // 사주 분석 실행 (UID 포함하여 서버에 전송)
+  // 사주 분석 실행
   Future<void> _analyze() async {
     if (_dateController.text.isEmpty || _timeController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -102,29 +102,31 @@ class _InputScreenState extends State<InputScreen> {
       return;
     }
 
-    // 현재 로그인된 Firebase 유저 정보 확인
     final user = FirebaseAuth.instance.currentUser;
     
     setState(() => _isLoading = true);
     try {
+      // [중요] birthPlace에 도시 이름을 넘겨줘야 백엔드 Google Maps가 작동함
       final result = await SajuApi.calculateSaju(
         birthDate: _dateController.text,
         birthTime: _timeController.text,
         timezone: _timezone,
         longitude: _longitude,
-        userId: user?.uid, // UID를 함께 보내야 Railway DB에 기록이 남습니다.
+        latitude: _latitude,
+        birthPlace: _locationController.text, // 도시 이름 전송!
+        userId: user?.uid, 
         includeAnalysis: true,
       );
 
       if (!mounted) return;
       Navigator.push(
         context, 
-        MaterialPageRoute(builder: (context) => ResultScreen(data: result))
+        MaterialPageRoute(builder: (context) => ResultScreen(sajuModel: result))
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('분석 중 에러 발생: $e')),
+        SnackBar(content: Text('분석 실패: $e')),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -144,7 +146,6 @@ class _InputScreenState extends State<InputScreen> {
         ),
         centerTitle: true,
         actions: [
-          // 로그아웃 버튼 (우측 상단 아이콘)
           IconButton(
             icon: const Icon(Icons.logout, color: Color(0xFF45A29E)),
             onPressed: () {
@@ -175,7 +176,6 @@ class _InputScreenState extends State<InputScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // 날짜 입력 필드
             _buildTextField(
               controller: _dateController,
               label: 'Birth Date',
@@ -183,7 +183,6 @@ class _InputScreenState extends State<InputScreen> {
               onTap: _selectDate,
             ),
             const SizedBox(height: 20),
-            // 시간 입력 필드
             _buildTextField(
               controller: _timeController,
               label: 'Birth Time',
@@ -192,16 +191,15 @@ class _InputScreenState extends State<InputScreen> {
             ),
             const SizedBox(height: 20),
             
-            // 지역 검색 필드
             _buildTextField(
               controller: _locationController,
               label: 'City Search',
               icon: Icons.search,
-              hint: 'e.g. Seoul, New York',
+              hint: 'e.g. Seoul, Nanterre',
               onChanged: _onSearchChanged,
             ),
             
-            // 지역 검색 결과 목록 (자동완성)
+            // 검색 결과 리스트
             if (_searchResults.isNotEmpty)
               Container(
                 margin: const EdgeInsets.only(top: 5),
@@ -223,9 +221,10 @@ class _InputScreenState extends State<InputScreen> {
                       setState(() {
                         _locationController.text = item['display_name'].split(',')[0];
                         _longitude = double.parse(item['lon']);
+                        _latitude = double.parse(item['lat']);
                         _searchResults = [];
-                        // 경도에 따라 타임존 자동 추측 (서울 근처 120~135도)
-                        _timezone = (_longitude > 120 && _longitude < 135) ? 'Asia/Seoul' : 'America/New_York';
+                        // 타임존은 백엔드에서 Google Maps로 정확히 찾으므로 여기선 대충 넘겨도 됨
+                        _timezone = 'UTC'; 
                       });
                     },
                   )).toList(),
@@ -233,7 +232,6 @@ class _InputScreenState extends State<InputScreen> {
               ),
             
             const SizedBox(height: 60),
-            // 분석 결과 확인 버튼
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -263,7 +261,6 @@ class _InputScreenState extends State<InputScreen> {
     );
   }
 
-  // 공통 텍스트 필드 빌더
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
