@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -351,7 +352,7 @@ class _InputScreenState extends State<InputScreen> with SingleTickerProviderStat
           // 검색 결과 리스트 (떠있는 느낌)
           if (_searchResults.isNotEmpty)
             Container(
-              margin: const EdgeInsets.only(top: 16), // [수정됨] EdgeInsets.top -> EdgeInsets.only(top: ...)
+              margin: const EdgeInsets.only(top: 16),
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
                 color: const Color(0xFF1E1E2C),
