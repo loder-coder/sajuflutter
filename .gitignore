@@ -1,0 +1,47 @@
+Flutter/Dart 관련
+
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+
+Android 관련
+
+**/android/.gradle
+**/android/local.properties
+**/android/project.skp
+**/android/app/src/main/res/raw/auth_config.json
+**/android/app/google-services.json
+**/android/gradlew
+**/android/gradlew.bat
+/android//gradle-wrapper.jar
+
+iOS 관련
+
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/Ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.framework.zip
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/flutter_settings_json
+**/ios/ServiceDefinitions.json
+**/Runner/GeneratedPluginRegistrant.[mh]
+
+OS/IDE 관련 (잡동사니)
+
+.DS_Store
+.idea/
+.vscode/
+*.iml
+*.log
+*.class
+*.swp
+
+빌드 결과물
+
+*.apk
+*.aab
+*.exe
