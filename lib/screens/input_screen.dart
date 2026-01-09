@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../api/saju_api.dart';
-import 'result_screen.dart'; // 결과 화면으로 이동
+import 'result_screen.dart';
 
 class InputScreen extends StatefulWidget {
   const InputScreen({super.key});
@@ -13,97 +13,56 @@ class InputScreen extends StatefulWidget {
 class _InputScreenState extends State<InputScreen> {
   final _dateController = TextEditingController();
   final _timeController = TextEditingController();
+  final _locationController = TextEditingController();
+  
+  double _longitude = -74.0060; // 기본값 뉴욕
+  String _timezone = 'America/New_York';
   bool _isLoading = false;
+  List<dynamic> _searchResults = [];
 
-  // 날짜 선택기
+  // 날짜/시간 선택기는 기존과 동일
   Future<void> _selectDate() async {
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF45A29E),
-              onPrimary: Colors.black,
-              surface: Color(0xFF1F2833),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-    if (picked != null) {
-      setState(() {
-        _dateController.text = DateFormat('yyyy-MM-dd').format(picked);
-      });
-    }
+    if (picked != null) setState(() => _dateController.text = DateFormat('yyyy-MM-dd').format(picked));
   }
 
-  // 시간 선택기
   Future<void> _selectTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF45A29E),
-              onPrimary: Colors.black,
-              surface: Color(0xFF1F2833),
-              onSurface: Colors.white,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+    final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (picked != null) {
       final now = DateTime.now();
-      final dt = DateTime(now.year, now.month, now.day, picked.hour, picked.minute);
-      setState(() {
-        _timeController.text = DateFormat('HH:mm').format(dt);
-      });
+      setState(() => _timeController.text = DateFormat('HH:mm').format(DateTime(now.year, now.month, now.day, picked.hour, picked.minute)));
     }
   }
 
-  // 분석 시작
-  Future<void> _analyze() async {
-    if (_dateController.text.isEmpty || _timeController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
+  // [신규] 지역 검색 로직
+  Future<void> _onSearchChanged(String query) async {
+    if (query.length < 2) {
+      setState(() => _searchResults = []);
       return;
     }
+    final results = await SajuApi.searchLocation(query);
+    setState(() => _searchResults = results);
+  }
 
+  Future<void> _analyze() async {
+    if (_dateController.text.isEmpty || _timeController.text.isEmpty) return;
     setState(() => _isLoading = true);
-
     try {
       final result = await SajuApi.calculateSaju(
         birthDate: _dateController.text,
         birthTime: _timeController.text,
-        timezone: 'America/New_York', // 일단 고정 (나중에 선택 기능 추가 가능)
-        longitude: -74.0060,
+        timezone: _timezone,
+        longitude: _longitude,
       );
-
       if (!mounted) return;
-      
-      // 결과 화면으로 이동
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ResultScreen(data: result),
-        ),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (context) => ResultScreen(data: result)));
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -112,61 +71,64 @@ class _InputScreenState extends State<InputScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Enter Origin'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Padding(
+      appBar: AppBar(title: const Text('ENTER ORIGIN'), centerTitle: true),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 날짜 입력
             TextField(
               controller: _dateController,
               readOnly: true,
               onTap: _selectDate,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: 'Birth Date',
-                labelStyle: TextStyle(color: Color(0xFF45A29E)),
-                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF45A29E))),
-                suffixIcon: Icon(Icons.calendar_today, color: Color(0xFF45A29E)),
-              ),
+              decoration: const InputDecoration(labelText: 'Birth Date', suffixIcon: Icon(Icons.calendar_today)),
             ),
             const SizedBox(height: 20),
-            
-            // 시간 입력
             TextField(
               controller: _timeController,
               readOnly: true,
               onTap: _selectTime,
-              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(labelText: 'Birth Time', suffixIcon: Icon(Icons.access_time)),
+            ),
+            const SizedBox(height: 20),
+            
+            // 지역 검색 필드
+            TextField(
+              controller: _locationController,
+              onChanged: _onSearchChanged,
               decoration: const InputDecoration(
-                labelText: 'Birth Time',
-                labelStyle: TextStyle(color: Color(0xFF45A29E)),
-                enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.grey)),
-                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF45A29E))),
-                suffixIcon: Icon(Icons.access_time, color: Color(0xFF45A29E)),
+                labelText: 'City Search',
+                hintText: 'e.g. Seoul, New York',
+                suffixIcon: Icon(Icons.search),
               ),
             ),
+            if (_searchResults.isNotEmpty)
+              Container(
+                margin: const EdgeInsets.only(top: 5),
+                decoration: BoxDecoration(color: const Color(0xFF1F2833), borderRadius: BorderRadius.circular(8)),
+                child: Column(
+                  children: _searchResults.map((item) => ListTile(
+                    title: Text(item['display_name'], style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                    onTap: () {
+                      setState(() {
+                        _locationController.text = item['display_name'].split(',')[0];
+                        _longitude = double.parse(item['lon']);
+                        _searchResults = [];
+                        // 대략적인 타임존 설정 로직 (실제로는 더 복잡하지만 우선 고정/유추)
+                        _timezone = _longitude > 100 ? 'Asia/Seoul' : 'America/New_York';
+                      });
+                    },
+                  )).toList(),
+                ),
+              ),
+            
             const SizedBox(height: 40),
-
-            // 버튼
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 60,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _analyze,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF45A29E),
-                  foregroundColor: Colors.black,
-                ),
-                child: _isLoading 
-                  ? const CircularProgressIndicator(color: Colors.black)
-                  : const Text('REVEAL MY ENERGY', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF45A29E)),
+                child: _isLoading ? const CircularProgressIndicator() : const Text('REVEAL MY ENERGY', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
               ),
             ),
           ],
