@@ -1,3 +1,8 @@
+// 1. 이 plugins 블록을 맨 위에 새로 추가하셈
+plugins {
+    id("com.google.gms.google-services") version "4.4.1" apply false
+}
+
 allprojects {
     repositories {
         google()

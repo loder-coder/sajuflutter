@@ -9,7 +9,12 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # --- 필수 라이브러리 (버전 최적화됨) ---
+  # --- Firebase & Social Login (이게 있어야 빨간 줄 없어짐) ---
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  google_sign_in: ^6.1.6
+
+  # --- 필수 라이브러리 ---
   http: ^1.2.0
   google_fonts: ^6.1.0
   provider: ^6.1.1

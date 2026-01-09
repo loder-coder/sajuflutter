@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "282085309444",
+    "project_id": "sajuflutter",
+    "storage_bucket": "sajuflutter.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:282085309444:android:fad78397f1d5b2c6c84951",
+        "android_client_info": {
+          "package_name": "com.example.saju_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNPFpNKDseWQZoc3lzd1yQ8ujWtAAsL2U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
