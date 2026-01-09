@@ -1,5 +1,8 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/saju_model.dart';
 
 class ResultScreen extends StatefulWidget {
@@ -14,13 +17,15 @@ class ResultScreen extends StatefulWidget {
 class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  // --- Joseon Pixel-Punk Color Palette ---
-  final Color bgInk = const Color(0xFF121216);      // 먹색 (배경)
-  final Color paperGrey = const Color(0xFFD3D3D3);  // 한지 회색 (텍스트)
-  final Color danRed = const Color(0xFFD94844);     // 단청 적색
-  final Color danBlue = const Color(0xFF496EA7);    // 단청 청색
-  final Color danGreen = const Color(0xFF488C68);   // 단청 녹색
-  final Color goldCoin = const Color(0xFFE5B04F);   // 엽전 금색
+  // --- Theme Colors (Synced with Intro/Input) ---
+  final Color bgStart = const Color(0xFF08080A);
+  final Color bgEnd = const Color(0xFF101018);
+  
+  // Oriental Accents
+  final Color accentTeal = const Color(0xFF00E676); // 메인 액센트
+  final Color danRed = const Color(0xFFFF4E50);     // 주작
+  final Color danBlue = const Color(0xFF1976D2);    // 청룡
+  final Color danGold = const Color(0xFFFFD700);    // 황금
 
   @override
   void initState() {
@@ -37,182 +42,186 @@ class _ResultScreenState extends State<ResultScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgInk,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildTopBar(),
-            _buildPixelDivider(),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                physics: const NeverScrollableScrollPhysics(), // 탭바로만 이동 (게임 느낌)
-                children: [
-                  _RoadmapTab(model: widget.sajuModel, colors: _colors),
-                  _DimensionsTab(model: widget.sajuModel, colors: _colors),
-                  _BondTab(model: widget.sajuModel, colors: _colors),
-                  _SoulProfileTab(model: widget.sajuModel, colors: _colors),
-                ],
+      backgroundColor: bgStart,
+      extendBody: true,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [bgStart, bgEnd],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: [
+                    _RoadmapTab(model: widget.sajuModel, colors: _colors),
+                    _DimensionsTab(model: widget.sajuModel, colors: _colors),
+                    _BondTab(model: widget.sajuModel, colors: _colors),
+                    _SoulProfileTab(model: widget.sajuModel, colors: _colors),
+                  ],
+                ),
               ),
-            ),
-          ],
+              // 하단 네비게이션 바 공간 확보
+              SizedBox(height: 80 + MediaQuery.of(context).padding.bottom), 
+            ],
+          ),
         ),
       ),
-      bottomNavigationBar: _buildPixelBottomNav(),
+      bottomNavigationBar: _buildGlassBottomNav(),
     );
   }
 
-  // 색상 전달용 맵 getter
   Map<String, Color> get _colors => {
-        'bg': bgInk,
-        'paper': paperGrey,
+        'teal': accentTeal,
         'red': danRed,
         'blue': danBlue,
-        'green': danGreen,
-        'gold': goldCoin,
+        'gold': danGold,
       };
 
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
-              Icon(Icons.token, color: goldCoin, size: 24),
-              const SizedBox(width: 10),
               Text(
                 "SAJU.OS",
-                style: TextStyle(
-                  color: paperGrey,
-                  fontFamily: 'monospace',
+                style: GoogleFonts.cinzel(
+                  color: Colors.white,
                   fontSize: 20,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: -1.0,
+                  letterSpacing: 4.0,
                 ),
               ),
             ],
           ),
-          _PixelBadge(
-            text: "USER: ${widget.sajuModel.userName}",
-            color: danBlue,
-            textColor: Colors.white,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: accentTeal.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: accentTeal.withOpacity(0.3)),
+            ),
+            child: Text(
+              widget.sajuModel.userName.toUpperCase(),
+              style: GoogleFonts.inter(
+                color: accentTeal,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 1.0,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildPixelDivider() {
+  Widget _buildGlassBottomNav() {
     return Container(
-      height: 4,
-      color: Colors.black,
-      child: Row(
-        children: List.generate(
-          10,
-          (index) => Expanded(
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              color: index % 2 == 0 ? danRed : Colors.transparent,
-            ),
+      margin: EdgeInsets.fromLTRB(24, 0, 24, 30 + MediaQuery.of(context).padding.bottom),
+      height: 64,
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: TabBar(
+            controller: _tabController,
+            indicator: const UnderlineTabIndicator(borderSide: BorderSide.none),
+            labelColor: accentTeal,
+            unselectedLabelColor: Colors.white24,
+            onTap: (index) => setState(() {}),
+            tabs: [
+              _buildTabItem(Icons.timeline, 0),
+              _buildTabItem(Icons.grid_view, 1),
+              _buildTabItem(Icons.emergency_share, 2), // Bond
+              _buildTabItem(Icons.fingerprint, 3), // Profile
+            ],
           ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 800.ms, delay: 200.ms).moveY(begin: 50, end: 0);
   }
 
-  Widget _buildPixelBottomNav() {
-    return Container(
-      height: 72,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A20),
-        border: const Border(top: BorderSide(color: Colors.white24, width: 2)),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicatorColor: goldCoin,
-        indicatorWeight: 4,
-        labelColor: goldCoin,
-        unselectedLabelColor: Colors.grey,
-        labelStyle: const TextStyle(fontFamily: 'monospace', fontSize: 10, fontWeight: FontWeight.bold),
-        tabs: const [
-          Tab(icon: Icon(Icons.map_outlined), text: "ROADMAP"),
-          Tab(icon: Icon(Icons.grid_view), text: "THEMES"),
-          Tab(icon: Icon(Icons.cable), text: "BOND"),
-          Tab(icon: Icon(Icons.person_pin), text: "PROFILE"),
-        ],
+  Widget _buildTabItem(IconData icon, int index) {
+    final isSelected = _tabController.index == index;
+    return Tab(
+      icon: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.all(8),
+        decoration: isSelected
+            ? BoxDecoration(
+                color: accentTeal.withOpacity(0.1),
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: accentTeal.withOpacity(0.2), blurRadius: 12)],
+              )
+            : null,
+        child: Icon(icon, size: 22),
       ),
     );
   }
 }
 
 // =============================================================================
-// UI Components (Pixel Art Style)
+// UI Components
 // =============================================================================
 
-class _PixelContainer extends StatelessWidget {
+class _GlassCard extends StatelessWidget {
   final Widget child;
-  final Color backgroundColor;
-  final Color borderColor;
-  final double padding;
+  final Color? borderColor;
+  final bool isGlowing;
 
-  const _PixelContainer({
+  const _GlassCard({
     required this.child,
-    this.backgroundColor = const Color(0xFF1E1E26),
-    this.borderColor = Colors.white24,
-    this.padding = 20.0,
+    this.borderColor,
+    this.isGlowing = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      decoration: const BoxDecoration(
-        color: Colors.black, // Hard shadow color
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black,
-            offset: Offset(4, 4),
-            blurRadius: 0, // No blur for pixel feel
-          ),
-        ],
-      ),
-      child: Container(
-        transform: Matrix4.translationValues(-2, -2, 0), // Shift for shadow effect
-        padding: EdgeInsets.all(padding),
-        decoration: BoxDecoration(
-          color: backgroundColor,
-          border: Border.all(color: borderColor, width: 2),
-        ),
-        child: child,
-      ),
-    );
-  }
-}
-
-class _PixelBadge extends StatelessWidget {
-  final String text;
-  final Color color;
-  final Color textColor;
-
-  const _PixelBadge({required this.text, required this.color, this.textColor = Colors.white});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        border: Border.all(color: color, width: 2),
+        color: Colors.white.withOpacity(0.02),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: borderColor ?? Colors.white.withOpacity(0.08), 
+          width: 1
+        ),
+        boxShadow: isGlowing
+            ? [BoxShadow(color: (borderColor ?? Colors.white).withOpacity(0.15), blurRadius: 20, spreadRadius: -5)]
+            : [],
       ),
-      child: Text(
-        text.toUpperCase(),
-        style: TextStyle(
-          color: textColor,
-          fontFamily: 'monospace',
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: child,
+          ),
         ),
       ),
     );
@@ -223,37 +232,30 @@ class _SectionHeader extends StatelessWidget {
   final String title;
   final Color color;
 
-  const _SectionHeader(this.title, {this.color = const Color(0xFFE5B04F)});
+  const _SectionHeader(this.title, {required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24, bottom: 12),
-      child: Row(
-        children: [
-          Container(width: 8, height: 8, color: color),
-          const SizedBox(width: 8),
-          Text(
-            title.toUpperCase(),
-            style: TextStyle(
-              color: Colors.white,
-              fontFamily: 'monospace',
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: Container(height: 2, color: Colors.white12)),
-        ],
+      padding: const EdgeInsets.only(top: 12, bottom: 12),
+      child: Text(
+        title,
+        style: GoogleFonts.inter(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 2.0,
+        ),
       ),
     );
   }
 }
 
 // =============================================================================
-// Tab 1: The Roadmap (Time-based)
+// Tabs
 // =============================================================================
+
+// 1. Roadmap Tab
 class _RoadmapTab extends StatelessWidget {
   final SajuModel model;
   final Map<String, Color> colors;
@@ -262,87 +264,76 @@ class _RoadmapTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 실제 데이터 사용
-    final dailyVibe = model.vibeKeyword;
-    final yearTheme = model.yearTheme;
-    final yearDesc = model.yearDescription;
-
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       children: [
-        _SectionHeader("Daily Forecast", color: colors['red']!),
-        _PixelContainer(
-          borderColor: colors['red']!,
+        _SectionHeader("TODAY'S ENERGY", color: colors['red']!),
+        _GlassCard(
+          borderColor: colors['red']!.withOpacity(0.3),
+          isGlowing: true,
           child: Row(
             children: [
-              Icon(Icons.sunny, color: colors['red'], size: 36),
-              const SizedBox(width: 16),
+              Icon(Icons.sunny, color: colors['red'], size: 32),
+              const SizedBox(width: 20),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "TODAY'S KEYWORD",
-                      style: TextStyle(color: Colors.grey, fontFamily: 'monospace', fontSize: 10),
+                      model.vibeKeyword.toUpperCase(),
+                      style: GoogleFonts.cinzel(
+                        color: Colors.white, 
+                        fontSize: 22, 
+                        fontWeight: FontWeight.bold
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      dailyVibe.toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'monospace',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "The energy flows towards change. Check your surroundings.",
-                      style: const TextStyle(color: Colors.white70, fontFamily: 'monospace', fontSize: 12),
+                      "High intensity energy detected.",
+                      style: GoogleFonts.inter(color: Colors.white54, fontSize: 12),
                     ),
                   ],
                 ),
               )
             ],
           ),
-        ),
+        ).animate().fadeIn().moveX(begin: -20, end: 0),
 
-        _SectionHeader("Yearly Theme", color: colors['blue']!),
-        _PixelContainer(
-          borderColor: colors['blue']!,
+        _SectionHeader("YEARLY THEME", color: colors['blue']!),
+        _GlassCard(
+          borderColor: colors['blue']!.withOpacity(0.3),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("2026 ARCHETYPE", style: TextStyle(color: colors['blue'], fontFamily: 'monospace', fontWeight: FontWeight.bold)),
-                  Icon(Icons.calendar_today, color: colors['blue'], size: 16),
-                ],
+              Text(
+                model.yearTheme.toUpperCase(),
+                style: GoogleFonts.cinzel(
+                  color: Colors.white, 
+                  fontSize: 20, 
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0
+                ),
               ),
               const SizedBox(height: 12),
-              Text(
-                yearTheme.toUpperCase(),
-                style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Container(height: 2, width: 40, color: colors['blue']),
+              Container(height: 1, color: Colors.white10),
               const SizedBox(height: 12),
               Text(
-                yearDesc,
-                style: const TextStyle(color: Colors.white70, fontFamily: 'monospace', height: 1.5),
+                model.yearDescription,
+                style: GoogleFonts.inter(
+                  color: Colors.white70, 
+                  fontSize: 13, 
+                  height: 1.6
+                ),
               ),
             ],
           ),
-        ),
+        ).animate().fadeIn(delay: 200.ms).moveX(begin: -20, end: 0),
       ],
     );
   }
 }
 
-// =============================================================================
-// Tab 2: Dimensions (Themes)
-// =============================================================================
+// 2. Dimensions Tab
 class _DimensionsTab extends StatelessWidget {
   final SajuModel model;
   final Map<String, Color> colors;
@@ -351,73 +342,66 @@ class _DimensionsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 실제 데이터가 없으면 기본값 0 표시
     final rpg = model.rpgStats;
-
     return ListView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       children: [
-        _SectionHeader("Life Stats", color: colors['green']!),
+        _SectionHeader("ATTRIBUTE MATRIX", color: colors['teal']!),
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 0.9,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.0,
           children: [
-            _buildStatCard("WEALTH", "Drive", rpg['Drive'] ?? 0, colors['gold']!),
-            _buildStatCard("CAREER", "Discipline", rpg['Discipline'] ?? 0, colors['blue']!),
-            _buildStatCard("SOCIAL", "Network", rpg['Network'] ?? 0, colors['red']!),
-            _buildStatCard("CREATIVE", "Output", rpg['Creativity'] ?? 0, colors['green']!),
+            _buildStatBox("WEALTH", rpg['Drive'] ?? 0, colors['gold']!, Icons.diamond_outlined),
+            _buildStatBox("HONOR", rpg['Discipline'] ?? 0, colors['blue']!, Icons.shield_outlined),
+            _buildStatBox("NETWORK", rpg['Network'] ?? 0, colors['red']!, Icons.hub_outlined),
+            _buildStatBox("CREATIVE", rpg['Creativity'] ?? 0, colors['teal']!, Icons.auto_fix_high_outlined),
           ],
-        ),
+        ).animate().fadeIn(delay: 100.ms).scale(),
       ],
     );
   }
 
-  Widget _buildStatCard(String title, String subTitle, int level, Color color) {
-    return _PixelContainer(
-      borderColor: color,
-      padding: 16,
+  Widget _buildStatBox(String label, int value, Color color, IconData icon) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withOpacity(0.2)),
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          Icon(icon, color: color.withOpacity(0.8), size: 28),
+          const SizedBox(height: 12),
+          Text(
+            label, 
+            style: GoogleFonts.inter(color: Colors.white38, fontSize: 10, letterSpacing: 1.5)
+          ),
+          const SizedBox(height: 4),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Icon(Icons.bolt, color: color, size: 20),
-              Text("LV.$level", style: TextStyle(color: color, fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+              Text(
+                "$value", 
+                style: GoogleFonts.cinzel(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)
+              ),
+              const SizedBox(width: 4),
+              Text("/ 5", style: GoogleFonts.inter(color: Colors.white24, fontSize: 12)),
             ],
           ),
-          const Spacer(),
-          Text(title, style: const TextStyle(color: Colors.grey, fontFamily: 'monospace', fontSize: 10)),
-          const SizedBox(height: 4),
-          Text(
-            subTitle.toUpperCase(),
-            style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          // Progress Bar
-          Container(
-            height: 6,
-            width: double.infinity,
-            color: Colors.white10,
-            alignment: Alignment.centerLeft,
-            child: FractionallySizedBox(
-              widthFactor: (level / 5).clamp(0.0, 1.0),
-              child: Container(color: color),
-            ),
-          )
         ],
       ),
     );
   }
 }
 
-// =============================================================================
-// Tab 3: The Bond (Social)
-// =============================================================================
+// 3. Bond Tab
 class _BondTab extends StatelessWidget {
   final SajuModel model;
   final Map<String, Color> colors;
@@ -427,57 +411,59 @@ class _BondTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(30.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _PixelContainer(
-              borderColor: Colors.white30,
-              padding: 30,
-              child: Icon(Icons.link_off, size: 48, color: Colors.white54),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: colors['red']!.withOpacity(0.3)),
+              color: colors['red']!.withOpacity(0.05),
             ),
-            const SizedBox(height: 30),
-            Text(
-              "NO CONNECTION",
-              style: TextStyle(color: colors['red'], fontFamily: 'monospace', fontSize: 24, fontWeight: FontWeight.bold),
+            child: Icon(Icons.link, size: 48, color: colors['red']),
+          ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: Offset(0.95, 0.95), end: Offset(1.05, 1.05), duration: 2000.ms),
+          
+          const SizedBox(height: 32),
+          
+          Text(
+            "CONNECT SOULS",
+            style: GoogleFonts.cinzel(
+              color: Colors.white, 
+              fontSize: 24, 
+              fontWeight: FontWeight.bold, 
+              letterSpacing: 4.0
             ),
-            const SizedBox(height: 16),
-            const Text(
-              "Invite a friend to unlock\nthe Chemistry Module.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontFamily: 'monospace', height: 1.5),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            "Sync with another blueprint to\nreveal your synergy.",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(color: Colors.white38, height: 1.5),
+          ),
+          const SizedBox(height: 48),
+          
+          TextButton.icon(
+            onPressed: () {},
+            icon: Icon(Icons.qr_code_scanner, color: colors['teal']),
+            label: Text(
+              "SCAN CODE", 
+              style: GoogleFonts.inter(color: colors['teal'], letterSpacing: 2.0, fontWeight: FontWeight.bold)
             ),
-            const SizedBox(height: 40),
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: ElevatedButton(
-                onPressed: () {
-                  // 공유 로직 추후 구현
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colors['blue'],
-                  shape: const RoundedRectangleBorder(), // 사각형 버튼
-                  elevation: 0,
-                  side: const BorderSide(color: Colors.black, width: 2), // 픽셀 테두리
-                ),
-                child: const Text(
-                  "GENERATE INVITE CODE",
-                  style: TextStyle(color: Colors.white, fontFamily: 'monospace', fontWeight: FontWeight.bold),
-                ),
-              ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+              backgroundColor: colors['teal']!.withOpacity(0.1),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-// =============================================================================
-// Tab 4: Soul Profile (My Page)
-// =============================================================================
+// 4. Soul Profile (The Card)
 class _SoulProfileTab extends StatelessWidget {
   final SajuModel model;
   final Map<String, Color> colors;
@@ -486,133 +472,201 @@ class _SoulProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 실제 데이터 로드
-    final archetype = model.mainArchetype;
-    final stats = model.elementalStats;
-
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 100),
       child: Column(
         children: [
-          // ID Card Style
+          // Card Container
           Container(
+            width: double.infinity,
             decoration: BoxDecoration(
-              color: colors['gold'], // Gold border
-              boxShadow: const [BoxShadow(color: Colors.black, offset: Offset(6, 6))],
+              borderRadius: BorderRadius.circular(24),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1E1E2C), Color(0xFF2D2D44)],
+              ),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 30, offset: const Offset(0, 15)),
+              ],
             ),
-            padding: const EdgeInsets.all(4),
-            child: Container(
-              color: const Color(0xFF15151A),
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Stack(
+              children: [
+                // Background Pattern
+                Positioned.fill(
+                  child: CustomPaint(painter: _PatternPainter(color: Colors.white.withOpacity(0.03))),
+                ),
+                
+                Padding(
+                  padding: const EdgeInsets.all(32.0),
+                  child: Column(
                     children: [
-                      Text("ID: ${model.userName}", style: TextStyle(color: colors['gold'], fontFamily: 'monospace', fontWeight: FontWeight.bold)),
-                      Icon(Icons.qr_code_2, color: colors['gold']),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Icon(Icons.nfc, color: Colors.white24, size: 20),
+                          Text("IDENTITY CARD", style: GoogleFonts.inter(color: Colors.white24, fontSize: 10, letterSpacing: 2)),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                      
+                      Text(
+                        model.mainArchetype.toUpperCase(),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.cinzel(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 2.0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        "The Chosen One",
+                        style: GoogleFonts.inter(color: colors['teal'], fontSize: 12, letterSpacing: 4),
+                      ),
+                      
+                      const SizedBox(height: 40),
+                      
+                      // Radar Chart
+                      SizedBox(
+                        height: 200,
+                        width: 200,
+                        child: CustomPaint(
+                          painter: _RadarPainter(stats: model.elementalStats, color: colors['teal']!),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 40),
+                      
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildCardStat("STR", "A+"),
+                          Container(width: 1, height: 20, color: Colors.white10),
+                          _buildCardStat("INT", "S"),
+                          Container(width: 1, height: 20, color: Colors.white10),
+                          _buildCardStat("LUK", "B"),
+                        ],
+                      )
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: colors['gold']?.withOpacity(0.1),
-                    child: Icon(Icons.face, size: 40, color: colors['gold']),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    archetype.toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontFamily: 'monospace', fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Primary Class",
-                    style: TextStyle(color: Colors.grey, fontFamily: 'monospace', fontSize: 12),
-                  ),
-                  const SizedBox(height: 32),
-                  
-                  // Radar Chart
-                  SizedBox(
-                    height: 200,
-                    width: 200,
-                    child: CustomPaint(
-                      painter: _PixelRadarPainter(stats: stats, lineColor: colors['blue']!),
+                ),
+              ],
+            ),
+          ).animate().flip(duration: 800.ms, direction: Axis.horizontal),
+          
+          const SizedBox(height: 32),
+          
+          // Share Button
+          Container(
+            width: double.infinity,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [colors['teal']!, const Color(0xFF00BFA5)]),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: colors['teal']!.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 5))],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () {},
+                borderRadius: BorderRadius.circular(16),
+                child: Center(
+                  child: Text(
+                    "SHARE IDENTITY",
+                    style: GoogleFonts.inter(
+                      color: Colors.black,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.download),
-              label: const Text("SAVE CARD IMAGE"),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white, width: 2),
-                shape: const RoundedRectangleBorder(),
-                textStyle: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold),
-              ),
-            ),
-          )
+          ).animate().fadeIn(delay: 500.ms).moveY(begin: 20, end: 0),
         ],
       ),
     );
   }
+
+  Widget _buildCardStat(String label, String value) {
+    return Column(
+      children: [
+        Text(label, style: GoogleFonts.inter(color: Colors.white24, fontSize: 10)),
+        const SizedBox(height: 4),
+        Text(value, style: GoogleFonts.cinzel(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+      ],
+    );
+  }
 }
 
-// -----------------------------------------------------------------------------
-// Pixel Art Radar Chart
-// -----------------------------------------------------------------------------
-class _PixelRadarPainter extends CustomPainter {
-  final Map<String, double> stats;
-  final Color lineColor;
+// =============================================================================
+// Painters
+// =============================================================================
 
-  _PixelRadarPainter({required this.stats, required this.lineColor});
+class _PatternPainter extends CustomPainter {
+  final Color color;
+  _PatternPainter({required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final centerX = size.width / 2;
-    final centerY = size.height / 2;
-    final radius = min(centerX, centerY);
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    const double step = 30;
+    for (double i = -size.height; i < size.width; i += step) {
+      canvas.drawLine(Offset(i, 0), Offset(i + size.height, size.height), paint);
+    }
+  }
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _RadarPainter extends CustomPainter {
+  final Map<String, double> stats;
+  final Color color;
+
+  _RadarPainter({required this.stats, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) / 2;
 
     final paintGrid = Paint()
-      ..color = Colors.white12
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2; // Thick lines for pixel look
+      ..color = Colors.white10
+      ..style = PaintingStyle.stroke;
 
     final paintFill = Paint()
-      ..color = lineColor.withOpacity(0.2)
+      ..color = color.withOpacity(0.2)
       ..style = PaintingStyle.fill;
 
     final paintStroke = Paint()
-      ..color = lineColor
+      ..color = color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 3;
+      ..strokeWidth = 2;
 
-    // Draw Background Pentagon Grid
-    for (int level = 1; level <= 3; level++) {
-      double r = radius * (level / 3);
-      var path = Path();
-      for (int i = 0; i < 5; i++) {
-        double angle = (2 * pi / 5) * i - (pi / 2);
-        double x = centerX + r * cos(angle);
-        double y = centerY + r * sin(angle);
-        if (i == 0) path.moveTo(x, y);
+    // Draw Grid (Pentagon)
+    for (int i = 1; i <= 3; i++) {
+      double r = radius * (i / 3);
+      Path path = Path();
+      for (int j = 0; j < 5; j++) {
+        double angle = (2 * pi / 5) * j - pi / 2;
+        double x = center.dx + r * cos(angle);
+        double y = center.dy + r * sin(angle);
+        if (j == 0) path.moveTo(x, y);
         else path.lineTo(x, y);
       }
       path.close();
       canvas.drawPath(path, paintGrid);
     }
 
-    // Draw Data Polygon
-    var pathStat = Path();
-    // Keys match SajuModel getters
+    // Draw Stats
     final values = [
       stats['Wood'] ?? 0,
       stats['Fire'] ?? 0,
@@ -620,38 +674,26 @@ class _PixelRadarPainter extends CustomPainter {
       stats['Metal'] ?? 0,
       stats['Water'] ?? 0,
     ];
-
-    // Normalize values (assuming input is roughly 0-10 or 0-100, normalize to radius)
-    // 데이터가 1.0 단위(0.0~1.0)인지 100단위인지 모르므로 일단 최대값 기준으로 정규화하거나 100을 max로 가정
-    double maxVal = values.reduce(max);
-    if (maxVal == 0) maxVal = 1; 
+    
+    // Max value normalize (assuming 5 is max)
+    double maxVal = 5.0;
+    Path statPath = Path();
 
     for (int i = 0; i < 5; i++) {
-      double angle = (2 * pi / 5) * i - (pi / 2);
-      // Normalize to 0.0 ~ 1.0 range based on a fixed max (e.g., 10 or 100) or dynamic max
-      // 여기서는 값이 0~1.0 사이라고 가정하거나, 큰 값이면 줄임
-      double rawVal = values[i];
-      double normalized = (rawVal > 1.0) ? rawVal / 100.0 : rawVal; // Heuristic
-      if (normalized > 1.0) normalized = 1.0;
-
-      double valRadius = radius * normalized;
-      
-      double sx = centerX + valRadius * cos(angle);
-      double sy = centerY + valRadius * sin(angle);
-      
-      if (i == 0) pathStat.moveTo(sx, sy);
-      else pathStat.lineTo(sx, sy);
-
-      // Draw Pixel Point (Square)
-      canvas.drawRect(
-        Rect.fromCenter(center: Offset(sx, sy), width: 8, height: 8),
-        Paint()..color = lineColor,
-      );
+      double angle = (2 * pi / 5) * i - pi / 2;
+      double val = (values[i] / maxVal).clamp(0.2, 1.0) * radius;
+      double x = center.dx + val * cos(angle);
+      double y = center.dy + val * sin(angle);
+      if (i == 0) statPath.moveTo(x, y);
+      else statPath.lineTo(x, y);
     }
-    pathStat.close();
+    statPath.close();
+
+    canvas.drawPath(statPath, paintFill);
+    canvas.drawPath(statPath, paintStroke);
     
-    canvas.drawPath(pathStat, paintFill);
-    canvas.drawPath(pathStat, paintStroke);
+    // Draw Glow
+    canvas.drawPath(statPath, Paint()..color = color.withOpacity(0.6)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10)..style = PaintingStyle.stroke..strokeWidth = 4);
   }
 
   @override

@@ -16,7 +16,11 @@ class IntroScreen extends StatefulWidget {
 class _IntroScreenState extends State<IntroScreen> {
   bool _isLoggingIn = false;
 
-  // 구글 로그인 처리 함수
+  // 색상 팔레트 (InputScreen과 동일하게 맞춤)
+  final Color _bgStart = const Color(0xFF08080A);
+  final Color _bgEnd = const Color(0xFF101018);
+  final Color _accentColor = const Color(0xFF00E676); // Neon Teal
+
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoggingIn = true);
     
@@ -26,7 +30,6 @@ class _IntroScreenState extends State<IntroScreen> {
       final user = await authService.signInWithGoogle();
       
       if (user != null) {
-        // 1. 내 백엔드 서버에 유저 정보 동기화 (DB 저장)
         await SajuApi.syncUser(
           uid: user.uid,
           email: user.email ?? "",
@@ -34,7 +37,6 @@ class _IntroScreenState extends State<IntroScreen> {
 
         if (!mounted) return;
         
-        // 2. 로그인 성공 시 입력 화면으로 이동
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const InputScreen()),
@@ -55,108 +57,123 @@ class _IntroScreenState extends State<IntroScreen> {
     return Scaffold(
       body: Container(
         width: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF0B0C10), Color(0xFF1F2833)],
+            colors: [_bgStart, _bgEnd], // 배경 톤 통일
           ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // 로고 애니메이션
+            const Spacer(flex: 2),
+            
+            // 1. 로고 애니메이션 (운)
             Container(
-              width: 120,
-              height: 120,
+              width: 140,
+              height: 140,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF45A29E), width: 1),
+                border: Border.all(color: _accentColor.withOpacity(0.5), width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF66FCF1).withOpacity(0.1),
-                    blurRadius: 20,
+                    color: _accentColor.withOpacity(0.2),
+                    blurRadius: 30,
                     spreadRadius: 5,
                   )
                 ],
+                color: Colors.white.withOpacity(0.02), // 유리 느낌 추가
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
                   '運',
-                  style: TextStyle(fontSize: 48, color: Color(0xFF66FCF1), fontWeight: FontWeight.w300),
+                  style: TextStyle(
+                    fontSize: 56, 
+                    color: _accentColor, 
+                    fontWeight: FontWeight.w300,
+                    shadows: [
+                      Shadow(color: _accentColor.withOpacity(0.8), blurRadius: 15)
+                    ]
+                  ),
                 ),
               ),
             )
-            .animate(onPlay: (controller) => controller.repeat())
-            .shimmer(duration: 3000.ms, color: const Color(0xFF66FCF1).withOpacity(0.5))
-            .scaleXY(begin: 0.95, end: 1.05, duration: 2000.ms, curve: Curves.easeInOutSine)
+            .animate(onPlay: (controller) => controller.repeat(reverse: true))
+            .scaleXY(begin: 0.95, end: 1.05, duration: 2500.ms, curve: Curves.easeInOutSine)
             .then()
-            .scaleXY(begin: 1.05, end: 0.95, duration: 2000.ms, curve: Curves.easeInOutSine),
+            .shimmer(duration: 2000.ms, color: Colors.white.withOpacity(0.3)),
 
-            const SizedBox(height: 50),
+            const SizedBox(height: 60),
 
-            // 타이틀
+            // 2. 타이틀 (Cinzel 폰트 유지 - 신비감)
             Text(
-              'SAJU',
+              'SAJU.OS',
               style: GoogleFonts.cinzel(
                 fontSize: 42,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
                 color: Colors.white,
-                letterSpacing: 12.0,
+                letterSpacing: 8.0,
               ),
-            ).animate().fadeIn(duration: 1000.ms).moveY(begin: 30, end: 0),
+            ).animate().fadeIn(duration: 1000.ms).moveY(begin: 20, end: 0),
+
+            const SizedBox(height: 10),
 
             Text(
               'ELEMENTAL BLUEPRINT',
               style: GoogleFonts.inter(
-                color: const Color(0xFF45A29E),
-                letterSpacing: 6.0,
+                color: Colors.white38,
+                letterSpacing: 4.0,
                 fontSize: 10,
-                fontWeight: FontWeight.w300,
+                fontWeight: FontWeight.w400,
               ),
             ).animate().fadeIn(delay: 500.ms, duration: 1000.ms),
 
-            const SizedBox(height: 100),
+            const Spacer(flex: 3),
 
-            // 로그인/시작 버튼 섹션
+            // 3. 로그인/시작 버튼 섹션
             if (_isLoggingIn)
-              const CircularProgressIndicator(color: Color(0xFF66FCF1))
+              Column(
+                children: [
+                  CircularProgressIndicator(color: _accentColor),
+                  const SizedBox(height: 20),
+                  Text("Synchronizing...", style: TextStyle(color: _accentColor, fontFamily: 'monospace')),
+                ],
+              )
             else ...[
-              // 구글 로그인 버튼
-              _buildSocialButton(
-                icon: Icons.login, 
+              // 구글 로그인 버튼 (유리 스타일 적용)
+              _buildGlassButton(
+                icon: Icons.g_mobiledata_rounded, // or Icons.login
                 label: 'CONTINUE WITH GOOGLE', 
                 onTap: _handleGoogleSignIn,
                 isPrimary: true,
-              ).animate().fadeIn(delay: 800.ms),
+              ).animate().fadeIn(delay: 800.ms).moveY(begin: 20, end: 0),
               
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               
-              // 비로그인 시작 버튼
-              TextButton(
-                onPressed: () {
+              // 게스트 로그인
+              _buildGlassButton(
+                icon: Icons.person_outline,
+                label: 'ENTER AS GUEST', 
+                onTap: () {
                   Navigator.pushReplacement(
                     context, 
                     MaterialPageRoute(builder: (context) => const InputScreen()),
                   );
                 },
-                child: Text(
-                  'CONTINUE AS GUEST',
-                  style: GoogleFonts.inter(
-                    color: Colors.white38,
-                    fontSize: 12,
-                    letterSpacing: 2.0,
-                  ),
-                ),
-              ).animate().fadeIn(delay: 1200.ms),
+                isPrimary: false,
+              ).animate().fadeIn(delay: 1000.ms).moveY(begin: 20, end: 0),
             ],
+            
+            const Spacer(flex: 1),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSocialButton({
+  // InputScreen의 버튼 스타일과 통일 (Glassmorphism)
+  Widget _buildGlassButton({
     required IconData icon, 
     required String label, 
     required VoidCallback onTap,
@@ -166,24 +183,35 @@ class _IntroScreenState extends State<IntroScreen> {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 40),
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 18),
         decoration: BoxDecoration(
-          color: isPrimary ? const Color(0xFF45A29E).withOpacity(0.1) : Colors.transparent,
-          border: Border.all(color: const Color(0xFF45A29E).withOpacity(0.5)),
-          borderRadius: BorderRadius.circular(4),
+          // Primary면 약간의 틴트, 아니면 투명
+          color: isPrimary ? _accentColor.withOpacity(0.1) : Colors.white.withOpacity(0.03),
+          borderRadius: BorderRadius.circular(16), // 둥글기 통일
+          border: Border.all(
+            color: isPrimary ? _accentColor.withOpacity(0.5) : Colors.white12,
+            width: 1.5,
+          ),
+          boxShadow: isPrimary 
+            ? [BoxShadow(color: _accentColor.withOpacity(0.15), blurRadius: 20)] 
+            : [],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: const Color(0xFF66FCF1), size: 18),
+            Icon(
+              icon, 
+              color: isPrimary ? _accentColor : Colors.white54, 
+              size: 20
+            ),
             const SizedBox(width: 12),
             Text(
               label,
               style: GoogleFonts.inter(
-                color: Colors.white,
-                fontSize: 13,
+                color: isPrimary ? Colors.white : Colors.white54,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
-                letterSpacing: 1.5,
+                letterSpacing: 1.2,
               ),
             ),
           ],
